@@ -6,9 +6,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import requests
 import re
 
+
 class ExchangeRateApp:
 
-    def __init__(self, root):
+    def _init_(self, root):
         self.root = root
         self.root.title("Exchange Rate Analyzer")
         self.year_var = tk.StringVar()
@@ -47,7 +48,8 @@ class ExchangeRateApp:
 
         # Dropdown for selecting duration (weekly, monthly, quarterly, annual)
         self.duration_var = tk.StringVar()
-        self.duration_dropdown = ttk.Combobox(root, textvariable=self.duration_var, values=["Weekly", "Monthly", "Quarterly", "Annual"])
+        self.duration_dropdown = ttk.Combobox(root, textvariable=self.duration_var,
+                                              values=["Weekly", "Monthly", "Quarterly", "Annual"])
         self.duration_dropdown.grid(row=1, column=1, padx=10, pady=10)
 
         # Button to plot the chart
@@ -151,7 +153,7 @@ class ExchangeRateApp:
     def filter_data(self, currency2, duration):
         selected_year = self.year_var.get()
         csv_file_path = f'Exchange_Rate_Report\Exchange_Rate_Report_{selected_year}.csv'
-        
+
         # Load data for the selected year
         df = pd.read_csv(csv_file_path)
         df['Date'] = pd.to_datetime(df['Date'], format='%d-%b-%y')
@@ -164,7 +166,18 @@ class ExchangeRateApp:
         elif duration == "Quarterly":
             filtered_data = df.resample('Q', on='Date').mean()
         elif duration == "Annual":
-            filtered_data = df.resample('Y', on='Date').mean()
+            all_data = []  # Create an empty list to store all dataframes
+
+            # Loop through each year and load the respective CSV data
+            for year in range(2012, 2023):
+                csv_file_path = f'Exchange_Rate_Report\Exchange_Rate_Report_{year}.csv'
+                df_year = pd.read_csv(csv_file_path)
+                df_year['Date'] = pd.to_datetime(df_year['Date'], format='%d-%b-%y')
+                all_data.append(df_year)  # Append each dataframe to the list
+
+            # Concatenate all the dataframes collected in the list
+            self.df = pd.concat(all_data)
+            filtered_data = self.df.resample('A', on='Date').mean()
         else:
             # Default to Monthly if an invalid duration is provided
             filtered_data = df.resample('M', on='Date').mean()
@@ -199,7 +212,8 @@ class ExchangeRateApp:
             converted_amount = exchange_rates[currency_code]
 
             # Display the result
-            self.result_label.configure(text=f"{amount:.3f} {source_currency} is {converted_amount:.3f} {target_currency}")
+            self.result_label.configure(
+                text=f"{amount:.3f} {source_currency} is {converted_amount:.3f} {target_currency}")
 
         except requests.RequestException as e:
             # Handle any request-related exceptions
@@ -260,7 +274,7 @@ class ExchangeRateApp:
 
             # Display all currencies in the text widget
             text_widget.insert(tk.END, f"{'Short Code':<15}{'Description':<30}{'Exchange Rate':<15}\n")
-            text_widget.insert(tk.END, "="*60 + "\n")
+            text_widget.insert(tk.END, "=" * 60 + "\n")
             for currency, rate in all_currencies.items():
                 text_widget.insert(tk.END, f"{currency:<15}{self.get_currency_description(currency):<30}{rate:.4f}\n")
 
@@ -303,7 +317,8 @@ class ExchangeRateApp:
         # Return the description for the given currency code
         return currency_descriptions.get(currency_code, currency_code)
 
-if __name__ == "__main__":
+
+if _name_ == "_main_":
     root = tk.Tk()
     app = ExchangeRateApp(root)
     root.mainloop()
